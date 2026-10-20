@@ -1,11 +1,3 @@
-#A atividade deverá ser disponibilizada em um repositório no GitHub, contendo:
-
-#Implementação de um labirinto próprio, com dimensão mínima de 10 × 10.
-#Implementação dos algoritmos DFS, BFS e Busca Gulosa, retornando o caminho encontrado e o número de casas visitadas.
-#Visualização dos três caminhos no labirinto.
-#Tabela comparativa com o tamanho do caminho e a quantidade de casas visitadas por algoritmo.
-#Arquivo README.md com uma breve explicação do labirinto desenvolvido, das implementações e dos resultados obtidos.
-
 labirinto = [
     "I.........",
     "...##.####",
@@ -21,103 +13,103 @@ labirinto = [
 
 DIRECOES = [(-1, 0), (0, 1), (1, 0), (0, -1)]
 
-def achar(lab, simbolo):
-    for i, linha in enumerate(lab):
+def achar(mapa, simbolo):
+    for indice_linha, linha in enumerate(mapa):
         if simbolo in linha:
-            return (i, linha.index(simbolo))
+            return (indice_linha, linha.index(simbolo))
 
 
-def livre(lab, i, j):
-    dentro = 0 <= i < len(lab) and 0 <= j < len(lab[0])
-    return dentro and lab[i][j] != '#'
+def livre(mapa, indice_linha, indice_coluna):
+    dentro_do_mapa = 0 <= indice_linha < len(mapa) and 0 <= indice_coluna < len(mapa[0])
+    return dentro_do_mapa and mapa[indice_linha][indice_coluna] != '#'
 
-def montar_grafo(lab):
+def montar_grafo(mapa):
     grafo = {}
-    for i in range(len(lab)):
-        for j in range(len(lab[0])):
-            if not livre(lab, i, j):
+    for indice_linha in range(len(mapa)):
+        for indice_coluna in range(len(mapa[0])):
+            if not livre(mapa, indice_linha, indice_coluna):
                 continue
-            grafo[(i, j)] = []
-            for di, dj in DIRECOES:
-                if livre(lab, i + di, j + dj):
-                    grafo[(i, j)].append((i + di, j + dj))
+            grafo[(indice_linha, indice_coluna)] = []
+            for movimento_linha, movimento_coluna in DIRECOES:
+                if livre(mapa, indice_linha + movimento_linha, indice_coluna + movimento_coluna):
+                    grafo[(indice_linha, indice_coluna)].append((indice_linha + movimento_linha, indice_coluna + movimento_coluna))
     return grafo
 
-def desenhar(lab, caminho):
-    grade = [list(linha) for linha in lab]
-    for i, j in caminho:
-        if grade[i][j] == '.':
-            grade[i][j] = '*'
-    for linha in grade:
+def desenhar(mapa, caminho):
+    mapa_desenhado = [list(linha) for linha in mapa]
+    for indice_linha, indice_coluna in caminho:
+        if mapa_desenhado[indice_linha][indice_coluna] == '.':
+            mapa_desenhado[indice_linha][indice_coluna] = '*'
+    for linha in mapa_desenhado:
         print(''.join(linha))
 
 
-def reconstruir(pais, saida):
+def reconstruir(antecessores, saida):
     caminho = []
-    atual = saida
-    while atual is not None:
-        caminho.append(atual)
-        atual = pais[atual]
+    casa_atual = saida
+    while casa_atual is not None:
+        caminho.append(casa_atual)
+        casa_atual = antecessores[casa_atual]
     caminho.reverse()
     return caminho
 
 
 def dfs(grafo, inicio, saida):
-    pais = {inicio: None}
+    antecessores = {inicio: None}
     casas_visitadas = []
 
-    def visitar(v):
-        casas_visitadas.append(v)
-        if v == saida:
+    def visitar(casa_atual):
+        casas_visitadas.append(casa_atual)
+        if casa_atual == saida:
             return True
-        for w in grafo[v]:
-            if w not in pais:
-                pais[w] = v
-                if visitar(w):
+        for casa_vizinha in grafo[casa_atual]:
+            if casa_vizinha not in antecessores:
+                antecessores[casa_vizinha] = casa_atual
+                if visitar(casa_vizinha):
                     return True
         return False
 
     if visitar(inicio):
-        return reconstruir(pais, saida), casas_visitadas
+        return reconstruir(antecessores, saida), casas_visitadas
     return [], casas_visitadas
 
 def bfs(grafo, inicio, saida):
     fila = [inicio]
-    proximo = 0  # Índice da próxima casa a explorar na fila.
-    pais = {inicio: None}
+    indice_fila = 0
+    antecessores = {inicio: None}
     casas_visitadas = []
-    while proximo < len(fila):
-        v = fila[proximo]
-        proximo += 1
-        casas_visitadas.append(v)
-        if v == saida:
-            return reconstruir(pais, saida), casas_visitadas
-        for w in grafo[v]:
-            if w not in pais:
+    while indice_fila < len(fila):
+        casa_atual = fila[indice_fila]
+        indice_fila += 1
+        casas_visitadas.append(casa_atual)
+        if casa_atual == saida:
+            return reconstruir(antecessores, saida), casas_visitadas
+        for casa_vizinha in grafo[casa_atual]:
+            if casa_vizinha not in antecessores:
 
-                pais[w] = v
-                fila.append(w)
+                antecessores[casa_vizinha] = casa_atual
+                fila.append(casa_vizinha)
     return [], casas_visitadas
 
-def h(v, saida):
-    return abs(v[0] - saida[0]) + abs(v[1] - saida[1])
+def h(casa_atual, saida):
+    return abs(casa_atual[0] - saida[0]) + abs(casa_atual[1] - saida[1])
 
 def gulosa(grafo, inicio, saida):
     fronteira = [(h(inicio, saida), inicio)]
-    pais = {inicio: None}
+    antecessores = {inicio: None}
     casas_visitadas = []
     while fronteira:
-        # Escolhe a menor distância; em empate, compara as coordenadas.
-        melhor = min(fronteira)
-        fronteira.remove(melhor)
-        _, v = melhor
-        casas_visitadas.append(v)
-        if v == saida:
-            return reconstruir(pais, saida), casas_visitadas
-        for w in grafo[v]:
-            if w not in pais:
-                pais[w] = v
-                fronteira.append((h(w, saida), w))
+
+        melhor_opcao = min(fronteira)
+        fronteira.remove(melhor_opcao)
+        _, casa_atual = melhor_opcao
+        casas_visitadas.append(casa_atual)
+        if casa_atual == saida:
+            return reconstruir(antecessores, saida), casas_visitadas
+        for casa_vizinha in grafo[casa_atual]:
+            if casa_vizinha not in antecessores:
+                antecessores[casa_vizinha] = casa_atual
+                fronteira.append((h(casa_vizinha, saida), casa_vizinha))
     return [], casas_visitadas
 
 def main():
@@ -126,17 +118,17 @@ def main():
     saida = achar(labirinto, 'F')
     print('I = entrada | F = saida | # = parede | . = livre | * = caminho')
     resultados = []
-    for nome, busca in [('DFS', dfs), ('BFS', bfs), ('Gulosa', gulosa)]:
-        caminho, visitadas = busca(grafo, inicio, saida)
-        resultados.append((nome, len(caminho) - 1 if caminho else '-',
+    for nome_busca, algoritmo in [('DFS', dfs), ('BFS', bfs), ('Gulosa', gulosa)]:
+        caminho, visitadas = algoritmo(grafo, inicio, saida)
+        resultados.append((nome_busca, len(caminho) - 1 if caminho else '-',
                            len(visitadas)))
-        print('\n' + nome + ':')
+        print('\n' + nome_busca + ':')
         desenhar(labirinto, caminho)
 
     print('\nCOMPARACAO')
     print(f'{"Busca":<10} {"Passos":>8} {"Casas visitadas":>18}')
-    for nome, passos, visitas in resultados:
-        print(f'{nome:<10} {str(passos):>8} {visitas:>18}')
+    for nome_busca, passos, visitas in resultados:
+        print(f'{nome_busca:<10} {str(passos):>8} {visitas:>18}')
 
 if __name__ == '__main__':
     main()
