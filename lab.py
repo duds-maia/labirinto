@@ -5,8 +5,6 @@
 #Visualização dos três caminhos no labirinto.
 #Tabela comparativa com o tamanho do caminho e a quantidade de casas visitadas por algoritmo.
 #Arquivo README.md com uma breve explicação do labirinto desenvolvido, das implementações e dos resultados obtidos.
-from collections import deque
-import heapq
 
 labirinto = [
     "I.........",
@@ -84,11 +82,13 @@ def dfs(grafo, inicio, saida):
     return [], casas_visitadas
 
 def bfs(grafo, inicio, saida):
-    fila = deque([inicio])
+    fila = [inicio]
+    proximo = 0  # Índice da próxima casa a explorar na fila.
     pais = {inicio: None}
     casas_visitadas = []
-    while fila:
-        v = fila.popleft()
+    while proximo < len(fila):
+        v = fila[proximo]
+        proximo += 1
         casas_visitadas.append(v)
         if v == saida:
             return reconstruir(pais, saida), casas_visitadas
@@ -107,14 +107,17 @@ def gulosa(grafo, inicio, saida):
     pais = {inicio: None}
     casas_visitadas = []
     while fronteira:
-        _, v = heapq.heappop(fronteira)
+        # Escolhe a menor distância; em empate, compara as coordenadas.
+        melhor = min(fronteira)
+        fronteira.remove(melhor)
+        _, v = melhor
         casas_visitadas.append(v)
         if v == saida:
             return reconstruir(pais, saida), casas_visitadas
         for w in grafo[v]:
             if w not in pais:
                 pais[w] = v
-                heapq.heappush(fronteira, (h(w, saida), w))
+                fronteira.append((h(w, saida), w))
     return [], casas_visitadas
 
 def main():
